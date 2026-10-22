@@ -32,4 +32,20 @@ public class PhoneController {
     public ResponseEntity<List<Phone>> getStockByUser(@PathVariable Long userId) {
         return ResponseEntity.ok(phoneService.getAvailablePhones(userId));
     }
+
+    @GetMapping("/user/{userId}/active")
+    public ResponseEntity<List<Phone>> getActivePhones(@PathVariable Long userId) {
+        return ResponseEntity.ok(phoneService.getActivePhonesByUser(userId));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Phone> updatePhone(@PathVariable Long id, @RequestBody Phone phone) {
+        return ResponseEntity.ok(phoneService.updatePhone(id, phone));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletePhone(@PathVariable Long id) {
+        phoneService.deletePhone(id);
+        return ResponseEntity.noContent().build();
+    }
 }

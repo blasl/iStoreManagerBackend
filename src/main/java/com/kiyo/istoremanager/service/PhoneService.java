@@ -49,4 +49,33 @@ public class PhoneService {
     public List<Phone> getAvailablePhones(Long userId) {
         return phoneRepository.findByUserIdAndStatus(userId, PhoneStatus.DISPONIBLE);
     }
+
+    public List<Phone> getActivePhonesByUser(Long userId) {
+        List<Phone> allPhones = phoneRepository.findByUserId(userId);
+
+        return allPhones.stream()
+                .filter(p -> p.getStatus() != PhoneStatus.ELIMINADO)
+                .toList();
+    }
+
+    public Phone updatePhone(Long id, Phone phoneDetails) {
+        Phone phone = phoneRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Teléfono no encontrado"));
+
+        phone.setModel(phoneDetails.getModel());
+        phone.setBatteryHealth(phoneDetails.getBatteryHealth());
+        phone.setPurchasePrice(phoneDetails.getPurchasePrice());
+        phone.setTargetPrice(phoneDetails.getTargetPrice());
+        phone.setNotes(phoneDetails.getNotes());
+
+        return phoneRepository.save(phone);
+    }
+
+    public void deletePhone(Long id) {
+        Phone phone = phoneRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Teléfono no encontrado"));
+
+        phone.setStatus(PhoneStatus.ELIMINADO);
+        phoneRepository.save(phone);
+    }
 }

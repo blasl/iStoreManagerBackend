@@ -1,5 +1,6 @@
 package com.kiyo.istoremanager.controller;
 
+import com.kiyo.istoremanager.dto.SaleResponse;
 import com.kiyo.istoremanager.model.Sale;
 import com.kiyo.istoremanager.service.SaleService;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +25,7 @@ public class SaleController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Sale>> getAllSales() {
-        return ResponseEntity.ok(saleService.getAllSales());
+    public ResponseEntity<List<SaleResponse>> getAllSales() {
+        return ResponseEntity.ok(saleService.getAllSalesWithProfit());
     }
 }
