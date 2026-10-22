@@ -3,17 +3,16 @@ package com.kiyo.istoremanager.service;
 import com.kiyo.istoremanager.model.Phone;
 import com.kiyo.istoremanager.model.PhoneStatus;
 import com.kiyo.istoremanager.repository.PhoneRepository;
+import com.kiyo.istoremanager.repository.SaleRepository;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
 public class PhoneService {
     private final PhoneRepository phoneRepository;
 
-    public PhoneService(PhoneRepository phoneRepository) {
+    public PhoneService(PhoneRepository phoneRepository, SaleRepository saleRepository) {
         this.phoneRepository = phoneRepository;
     }
 
@@ -35,16 +34,5 @@ public class PhoneService {
 
     public List<Phone> getAvailablePhones(Long userId) {
         return phoneRepository.findByUserIdAndStatus(userId, PhoneStatus.DISPONIBLE);
-    }
-
-    public Phone sellPhone(Long phoneId, BigDecimal salePrice) {
-        Phone phone = phoneRepository.findById(phoneId)
-                .orElseThrow(() -> new RuntimeException("Teléfono no encontrado"));
-
-        phone.setStatus(PhoneStatus.VENDIDO);
-        phone.setSalePrice(salePrice);
-        phone.setSaleDate(LocalDate.now());
-
-        return phoneRepository.save(phone);
     }
 }

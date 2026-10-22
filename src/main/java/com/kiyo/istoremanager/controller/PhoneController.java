@@ -32,9 +32,4 @@ public class PhoneController {
     public ResponseEntity<List<Phone>> getStockByUser(@PathVariable Long userId) {
         return ResponseEntity.ok(phoneService.getAvailablePhones(userId));
     }
-
-    @PatchMapping("/{phoneId}/sell")
-    public ResponseEntity<Phone> sellPhone(@PathVariable Long phoneId, @RequestParam BigDecimal salePrice) {
-        return ResponseEntity.ok(phoneService.sellPhone(phoneId, salePrice));
-    }
 }

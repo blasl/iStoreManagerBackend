@@ -2,6 +2,7 @@ package com.kiyo.istoremanager.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.jspecify.annotations.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -28,24 +29,15 @@ public class User implements UserDetails {
     private String name;
 
     @Override
+    @NonNull
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return Collections.emptyList(); // Por ahora sin roles complejos
     }
 
     @Override
+    @NonNull
     public String getUsername() {
         return email; // Usamos el email como identificador de usuario
     }
 
-    @Override
-    public boolean isAccountNonExpired() { return true; }
-
-    @Override
-    public boolean isAccountNonLocked() { return true; }
-
-    @Override
-    public boolean isCredentialsNonExpired() { return true; }
-
-    @Override
-    public boolean isEnabled() { return true; }
 }

@@ -22,20 +22,20 @@ public class Phone {
     @Column(nullable = false)
     private String model;
 
+    private String storage;
+
     private Integer batteryHealth;
 
     @Column(nullable = false)
     private BigDecimal purchasePrice;
 
-    private BigDecimal salePrice;
+    private BigDecimal targetPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PhoneStatus status = PhoneStatus.DISPONIBLE;
 
     private LocalDate purchaseDate;
-
-    private LocalDate saleDate;
 
     private String notes;
 
