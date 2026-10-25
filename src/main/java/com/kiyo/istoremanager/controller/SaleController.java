@@ -2,15 +2,16 @@ package com.kiyo.istoremanager.controller;
 
 import com.kiyo.istoremanager.dto.SaleResponse;
 import com.kiyo.istoremanager.model.Sale;
+import com.kiyo.istoremanager.model.User;
 import com.kiyo.istoremanager.service.SaleService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/sales")
-@CrossOrigin(origins = "*")
 public class SaleController {
 
     private final SaleService saleService;
@@ -20,12 +21,14 @@ public class SaleController {
     }
 
     @PostMapping("/phone/{phoneId}")
-    public ResponseEntity<Sale> registerSale(@PathVariable Long phoneId, @RequestBody Sale saleRequest) {
-        return ResponseEntity.ok(saleService.registerSale(phoneId, saleRequest.getSalePrice()));
+    public ResponseEntity<Sale> registerSale(@PathVariable Long phoneId,
+                                             @RequestBody Sale saleRequest,
+                                             @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(saleService.registerSale(phoneId, saleRequest.getSalePrice(), user));
     }
 
     @GetMapping
-    public ResponseEntity<List<SaleResponse>> getAllSales() {
-        return ResponseEntity.ok(saleService.getAllSalesWithProfit());
+    public ResponseEntity<List<SaleResponse>> getSales(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(saleService.getSalesWithProfit(user));
     }
 }

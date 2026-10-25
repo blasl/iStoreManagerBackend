@@ -1,17 +1,18 @@
 package com.kiyo.istoremanager.controller;
 
 import com.kiyo.istoremanager.model.Phone;
+import com.kiyo.istoremanager.model.User;
 import com.kiyo.istoremanager.service.PhoneService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/phones")
-@CrossOrigin(origins = "*")
 public class PhoneController {
+
     private final PhoneService phoneService;
 
     public PhoneController(PhoneService phoneService) {
@@ -19,33 +20,34 @@ public class PhoneController {
     }
 
     @PostMapping
-    public ResponseEntity<Phone> createPhone(@RequestBody Phone phone) {
-        return ResponseEntity.ok(phoneService.savePhone(phone));
+    public ResponseEntity<Phone> createPhone(@RequestBody Phone phone, @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(phoneService.savePhone(phone, user));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Phone>> getPhonesByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(phoneService.getPhonesByUser(userId));
+    @GetMapping
+    public ResponseEntity<List<Phone>> getPhones(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(phoneService.getPhones(user));
     }
 
-    @GetMapping("/user/{userId}/stock")
-    public ResponseEntity<List<Phone>> getStockByUser(@PathVariable Long userId) {
-        return ResponseEntity.ok(phoneService.getAvailablePhones(userId));
+    @GetMapping("/stock")
+    public ResponseEntity<List<Phone>> getStock(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(phoneService.getAvailablePhones(user));
     }
 
-    @GetMapping("/user/{userId}/active")
-    public ResponseEntity<List<Phone>> getActivePhones(@PathVariable Long userId) {
-        return ResponseEntity.ok(phoneService.getActivePhonesByUser(userId));
+    @GetMapping("/active")
+    public ResponseEntity<List<Phone>> getActive(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(phoneService.getActivePhones(user));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Phone> updatePhone(@PathVariable Long id, @RequestBody Phone phone) {
-        return ResponseEntity.ok(phoneService.updatePhone(id, phone));
+    public ResponseEntity<Phone> updatePhone(@PathVariable Long id, @RequestBody Phone phone,
+                                             @AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(phoneService.updatePhone(id, phone, user));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePhone(@PathVariable Long id) {
-        phoneService.deletePhone(id);
+    public ResponseEntity<Void> deletePhone(@PathVariable Long id, @AuthenticationPrincipal User user) {
+        phoneService.deletePhone(id, user);
         return ResponseEntity.noContent().build();
     }
 }

@@ -4,5 +4,6 @@ public enum PhoneStatus {
     DISPONIBLE,
     VENDIDO,
     EN_REPARACION,
+    RESERVADO,
     ELIMINADO
 }

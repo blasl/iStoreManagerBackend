@@ -1,17 +1,23 @@
 package com.kiyo.istoremanager.controller;
 
+import com.kiyo.istoremanager.dto.AuthRequest;
+import com.kiyo.istoremanager.dto.AuthResponse;
+import com.kiyo.istoremanager.dto.RegisterRequest;
+import com.kiyo.istoremanager.dto.UserResponse;
 import com.kiyo.istoremanager.model.User;
 import com.kiyo.istoremanager.security.JwtService;
 import com.kiyo.istoremanager.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UserRepository userRepository;
@@ -27,28 +33,39 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User request) {
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("El email ya está registrado");
+    public ResponseEntity<AuthResponse> register(@RequestBody RegisterRequest request) {
+        if (request.email() == null || request.email().isBlank()
+                || request.password() == null || request.password().length() < 6) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Email y contraseña (mínimo 6 caracteres) son obligatorios");
         }
-        request.setPassword(passwordEncoder.encode(request.getPassword()));
-        User savedUser = userRepository.save(request);
+        if (userRepository.findByEmail(request.email()).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "El email ya está registrado");
+        }
 
-        String jwtToken = jwtService.generateToken(savedUser);
-        return ResponseEntity.ok(new AuthResponse(jwtToken));
+        User user = new User();                       // fresh entity: no id or other fields from the client
+        user.setEmail(request.email());
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setName(request.name());
+        User savedUser = userRepository.save(user);
+
+        return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(savedUser)));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody User request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody AuthRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
-        String jwtToken = jwtService.generateToken(user);
-        return ResponseEntity.ok(new AuthResponse(jwtToken));
+        return ResponseEntity.ok(new AuthResponse(jwtService.generateToken(user)));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> me(Authentication authentication) {
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
+        return ResponseEntity.ok(new UserResponse(user.getId(), user.getEmail(), user.getName()));
     }
 }
-
-record AuthResponse(String token) {}

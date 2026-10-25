@@ -15,4 +15,6 @@ public interface PhoneRepository extends JpaRepository<Phone, Long> {
     List<Phone> findByUserIdAndStatus(Long userId, PhoneStatus status);
 
     Optional<Phone> findByImei(String imei);
+
+    Optional<Phone> findByIdAndUserId(Long id, Long userId);
 }
