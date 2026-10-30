@@ -1,7 +1,8 @@
 package com.kiyo.istoremanager.service;
 
+import com.kiyo.istoremanager.dto.PhoneResponse;
+import com.kiyo.istoremanager.dto.SaleRequest;
 import com.kiyo.istoremanager.dto.SaleResponse;
-import com.kiyo.istoremanager.model.ExtraExpense;
 import com.kiyo.istoremanager.model.Phone;
 import com.kiyo.istoremanager.model.PhoneStatus;
 import com.kiyo.istoremanager.model.Sale;
@@ -34,8 +35,8 @@ public class SaleService {
     }
 
     @Transactional
-    public Sale registerSale(Long phoneId, BigDecimal salePrice, User user) {
-        if (salePrice == null || salePrice.signum() < 0) {
+    public SaleResponse registerSale(Long phoneId, SaleRequest request, User user) {
+        if (request.salePrice() == null || request.salePrice().signum() < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El precio de venta es obligatorio");
         }
 
@@ -49,29 +50,39 @@ public class SaleService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "No se puede vender un teléfono eliminado");
         }
 
+        LocalDate saleDate = request.saleDate() != null ? request.saleDate() : LocalDate.now();
+        // +1 day of tolerance for client/server timezone differences
+        if (saleDate.isAfter(LocalDate.now().plusDays(1))) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha de venta no puede ser futura");
+        }
+        if (phone.getPurchaseDate() != null && saleDate.isBefore(phone.getPurchaseDate())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "La fecha de venta no puede ser anterior a la fecha de compra");
+        }
+
         phone.setStatus(PhoneStatus.VENDIDO);
         Phone updatedPhone = phoneRepository.save(phone);
 
         Sale sale = new Sale();
         sale.setPhone(updatedPhone);
-        sale.setSalePrice(salePrice);
-        sale.setSaleDate(LocalDate.now());
-        return saleRepository.save(sale);
+        sale.setSalePrice(request.salePrice());
+        sale.setSaleDate(saleDate);
+
+        return toResponse(saleRepository.save(sale));
     }
 
+    @Transactional(readOnly = true)
     public List<SaleResponse> getSalesWithProfit(User user) {
-        return saleRepository.findByPhoneUserId(user.getId()).stream().map(sale -> {
-            Phone phone = sale.getPhone();
+        return saleRepository.findByPhoneUserId(user.getId()).stream().map(this::toResponse).toList();
+    }
 
-            BigDecimal totalExpenses = extraExpenseRepository.findByPhoneId(phone.getId()).stream()
-                    .map(ExtraExpense::getAmount)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private SaleResponse toResponse(Sale sale) {
+        Phone phone = sale.getPhone();
+        BigDecimal totalExpenses = extraExpenseRepository.totalByPhoneId(phone.getId());
+        BigDecimal totalCost = phone.getPurchasePrice().add(totalExpenses);
+        BigDecimal netProfit = sale.getSalePrice().subtract(totalCost);
 
-            BigDecimal netProfit = sale.getSalePrice()
-                    .subtract(phone.getPurchasePrice().add(totalExpenses));
-
-            return new SaleResponse(sale.getId(), sale.getSalePrice(), sale.getSaleDate(),
-                    phone, totalExpenses, netProfit);
-        }).toList();
+        return new SaleResponse(sale.getId(), sale.getSalePrice(), sale.getSaleDate(),
+                PhoneResponse.from(phone, totalExpenses), totalExpenses, totalCost, netProfit);
     }
 }

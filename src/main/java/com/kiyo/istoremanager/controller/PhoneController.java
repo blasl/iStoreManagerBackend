@@ -1,5 +1,6 @@
 package com.kiyo.istoremanager.controller;
 
+import com.kiyo.istoremanager.dto.PhoneResponse;
 import com.kiyo.istoremanager.model.Phone;
 import com.kiyo.istoremanager.model.User;
 import com.kiyo.istoremanager.service.PhoneService;
@@ -20,28 +21,28 @@ public class PhoneController {
     }
 
     @PostMapping
-    public ResponseEntity<Phone> createPhone(@RequestBody Phone phone, @AuthenticationPrincipal User user) {
+    public ResponseEntity<PhoneResponse> createPhone(@RequestBody Phone phone, @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(phoneService.savePhone(phone, user));
     }
 
     @GetMapping
-    public ResponseEntity<List<Phone>> getPhones(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<PhoneResponse>> getPhones(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(phoneService.getPhones(user));
     }
 
     @GetMapping("/stock")
-    public ResponseEntity<List<Phone>> getStock(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<PhoneResponse>> getStock(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(phoneService.getAvailablePhones(user));
     }
 
     @GetMapping("/active")
-    public ResponseEntity<List<Phone>> getActive(@AuthenticationPrincipal User user) {
+    public ResponseEntity<List<PhoneResponse>> getActive(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(phoneService.getActivePhones(user));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Phone> updatePhone(@PathVariable Long id, @RequestBody Phone phone,
-                                             @AuthenticationPrincipal User user) {
+    public ResponseEntity<PhoneResponse> updatePhone(@PathVariable Long id, @RequestBody Phone phone,
+                                                     @AuthenticationPrincipal User user) {
         return ResponseEntity.ok(phoneService.updatePhone(id, phone, user));
     }
 
