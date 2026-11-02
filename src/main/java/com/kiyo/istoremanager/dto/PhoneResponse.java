@@ -17,11 +17,17 @@ public record PhoneResponse(
         PhoneStatus status,
         LocalDate purchaseDate,
         String notes,
-        BigDecimal totalExpenses
+        BigDecimal totalExpenses,
+        String thumbnailUrl,
+        int photoCount
 ) {
-    public static PhoneResponse from(Phone p, BigDecimal totalExpenses) {
+    public static PhoneResponse from(Phone p, BigDecimal totalExpenses, String thumbnailUrl, int photoCount) {
         return new PhoneResponse(p.getId(), p.getImei(), p.getModel(), p.getStorage(),
                 p.getBatteryHealth(), p.getPurchasePrice(), p.getTargetPrice(), p.getStatus(),
-                p.getPurchaseDate(), p.getNotes(), totalExpenses);
+                p.getPurchaseDate(), p.getNotes(), totalExpenses, thumbnailUrl, photoCount);
+    }
+
+    public static PhoneResponse from(Phone p, BigDecimal totalExpenses) {
+        return from(p, totalExpenses, null, 0);
     }
 }

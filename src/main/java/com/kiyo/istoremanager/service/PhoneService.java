@@ -2,9 +2,11 @@ package com.kiyo.istoremanager.service;
 
 import com.kiyo.istoremanager.dto.PhoneResponse;
 import com.kiyo.istoremanager.model.Phone;
+import com.kiyo.istoremanager.model.PhonePhoto;
 import com.kiyo.istoremanager.model.PhoneStatus;
 import com.kiyo.istoremanager.model.User;
 import com.kiyo.istoremanager.repository.ExtraExpenseRepository;
+import com.kiyo.istoremanager.repository.PhonePhotoRepository;
 import com.kiyo.istoremanager.repository.PhoneRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,16 +17,21 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class PhoneService {
 
     private final PhoneRepository phoneRepository;
     private final ExtraExpenseRepository expenseRepository;
+    private final PhonePhotoRepository photoRepository;
 
-    public PhoneService(PhoneRepository phoneRepository, ExtraExpenseRepository expenseRepository) {
+    public PhoneService(PhoneRepository phoneRepository,
+                        ExtraExpenseRepository expenseRepository,
+                        PhonePhotoRepository photoRepository) {
         this.phoneRepository = phoneRepository;
         this.expenseRepository = expenseRepository;
+        this.photoRepository = photoRepository;
     }
 
     public PhoneResponse savePhone(Phone phone, User owner) {
@@ -43,7 +50,7 @@ public class PhoneService {
         if (phone.getPurchaseDate() == null) {
             phone.setPurchaseDate(LocalDate.now());
         }
-        return PhoneResponse.from(phoneRepository.save(phone), BigDecimal.ZERO);
+        return PhoneResponse.from(phoneRepository.save(phone), BigDecimal.ZERO, null, 0);
     }
 
     public List<PhoneResponse> getPhones(User user) {
@@ -92,7 +99,8 @@ public class PhoneService {
         }
 
         Phone saved = phoneRepository.save(phone);
-        return PhoneResponse.from(saved, expenseRepository.totalByPhoneId(saved.getId()));
+        List<PhonePhoto> photos = photoRepository.findByPhoneIdOrderByPositionAscIdAsc(saved.getId());
+        return toResponse(saved, expenseRepository.totalByPhoneId(saved.getId()), photos);
     }
 
     public void deletePhone(Long id, User user) {
@@ -109,9 +117,20 @@ public class PhoneService {
         for (Object[] row : expenseRepository.sumByUser(user.getId())) {
             totals.put((Long) row[0], (BigDecimal) row[1]);
         }
+
+        Map<Long, List<PhonePhoto>> photosByPhone = photoRepository.findAllByUserId(user.getId()).stream()
+                .collect(Collectors.groupingBy(p -> p.getPhone().getId()));
+
         return phones.stream()
-                .map(p -> PhoneResponse.from(p, totals.getOrDefault(p.getId(), BigDecimal.ZERO)))
+                .map(p -> toResponse(p,
+                        totals.getOrDefault(p.getId(), BigDecimal.ZERO),
+                        photosByPhone.getOrDefault(p.getId(), List.of())))
                 .toList();
+    }
+
+    private PhoneResponse toResponse(Phone phone, BigDecimal totalExpenses, List<PhonePhoto> photos) {
+        String thumb = photos.isEmpty() ? null : PhotoUrls.thumb(photos.get(0).getUrl());
+        return PhoneResponse.from(phone, totalExpenses, thumb, photos.size());
     }
 
     private Phone findOwned(Long id, User user) {
